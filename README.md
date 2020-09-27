@@ -1,6 +1,6 @@
-# 响应式原理
+# 1 响应式原理
 
-## ES5中Object.defineproperty
+## 1.1 ES5中Object.defineproperty
 
 ```html
 <!DOCTYPE html>
@@ -51,7 +51,7 @@
 
 ```
 
-## vue2
+## 1.2 vue2中使用
 
 ```html
 <!DOCTYPE html>
@@ -87,7 +87,7 @@
 
 ```
 
-## ES6中proxy
+## 1.3 ES6中proxy
 
 ```html
 <!DOCTYPE html>
@@ -134,7 +134,7 @@
 
 ```
 
-## vue3
+## 1.4 vue3中使用
 
 ```html
 <!DOCTYPE html>
@@ -189,7 +189,7 @@
 
 ```
 
-## vue2和vue3响应式原理对比
+## 1.5 vue2和vue3响应式原理对比
 
 ### vue2中响应式
 
@@ -221,9 +221,9 @@ Vue3.0会针对于IE11出一个特殊的版本用于支持ie11
 
 ```
 
-# 创建vue3项目
+# 2 创建vue3项目
 
-## 使用vue-cli创建vue3.0项目
+## 2.1 使用vue-cli创建vue3.0项目
 
 - 安装vue-cli到最新版本 (必须高于4.5.0)
 
@@ -237,7 +237,7 @@ yarn global upgrade @vue/cli
 vue add vue-next 
 ```
 
-## 使用vite创建vue3.0项目
+## 2.2 使用vite创建vue3.0项目
 
 > Vite 是一个由原生 ESM 驱动的 Web 开发构建工具，在开发环境下基于浏览器原生 ES imports 开发，在生产环境下基于 Rollup 打包
 
@@ -250,4 +250,469 @@ npm install
 
 npm run dev
 ```
+
+# 3 composition API
+
+## 3.1 composition API 和 options API
+
+- options API
+
+```
+1 Options API的优点是容易学习和使用，代码有明确的书写位置
+2 Options API的缺点就是相似逻辑不容易复用，在大项目中尤为明显。
+3 Options API可以通过mixins提取相同的逻辑，但是容易发生命名冲突且来源不清晰
+```
+
+![options api](.\参考资料\options api.png)
+
+```vue
+// options API : 处理鼠标位置的逻辑分散在多处,不利于维护和逻辑复用
+
+<template>
+  <h3>当前鼠标的位置</h3>
+  <div>{{x}} -- {{y}}</div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      x: 0,
+      y: 0
+    }
+  },
+
+  methods: {
+    mousemove(e) {
+      this.x = e.pageX
+      this.y = e.pageY
+    }
+  },
+
+  created() {
+    document.addEventListener("mousemove", this.mousemove)
+  },
+
+  beforeDestroy() {
+    document.removeEventListener("mousemove", this.mousemove)
+  }
+
+}
+</script>
+
+<style>
+</style>
+```
+
+
+
+- composition API
+
+```
+1 Composition API是根据逻辑功能来组织代码的，一个功能所有的api放到一起
+2 即便项目很大，功能很多，都能够快速的定位到该功能所有的API
+3 Composition API提高了代码可读性和可维护性
+```
+
+![composition api](.\参考资料\composition api.png)
+
+![composition api2](.\参考资料\composition api2.png)
+
+```vue
+// composition API
+
+<template>
+  <h3>当前鼠标的位置</h3>
+  <div>{{x}} -- {{y}}</div>
+</template>
+
+<script>
+import { onMounted, reactive, onBeforeUnmount, toRefs, toRef } from 'vue'
+
+// composition API 可以实现逻辑的提取
+const mousePosition = () => {
+  const mouse = reactive({ x: 0, y: 0 })
+
+  const mousemove = (e) => {
+    mouse.x = e.pageX
+    mouse.y = e.pageY
+  }
+
+  onMounted(() => document.addEventListener("mousemove", mousemove))
+
+  onBeforeUnmount(() => document.removeEventListener("mousemove", mousemove))
+
+  return mouse
+}
+
+export default {
+
+  // setup为composition API 的起点
+  // setup在beforeCreate钩子函数之前执行
+  setup() {
+    console.log('setup')
+
+    const mouse = mousePosition()
+
+    return {
+      ...toRefs(mouse)
+    }
+  },
+
+  beforeCreate() {
+    console.log('beforeCreate')
+  },
+
+}
+</script>
+
+<style>
+</style>
+```
+
+
+
+- Vue3.0中推荐使用composition API,也保留了options API
+
+## 3.2 setup
+
+```
+1 setup函数是一个新的组件选项,作为组件中composition API的起点
+2 从生命周期钩子的角度来看，setup会在beforeCreate钩子函数之前执行
+3 setup中不能使用this，this指向undefined
+4 组件内只有一个setup
+```
+
+```vue
+// setup 的使用
+
+<template>
+  <div>{{car.brand}} -- {{car.color}}</div>
+</template>
+
+<script>
+export default {
+
+  // setup为composition API 的起点
+  // setup在beforeCreate钩子函数之前执行
+  setup() {
+    console.log('setup')
+    console.log(this) // undefined  setup内部没有this
+
+    // 这个数据不是响应式的,要使用响应式的数据想要使用reactive
+    const car = {
+      brand: '奔驰',
+      color: 'blue'
+    }
+
+    // setup中返回数据暴露给组件使用
+    return {
+      car
+    }
+
+  },
+
+  beforeCreate() {
+    console.log('beforeCreate')
+    console.log(this.car)
+  },
+
+
+}
+</script>
+```
+
+## 3.3 reactive
+
+> reactive函数接收一个普通对象, 返回该对象的响应式代理对象 (实际就是Proxy的封装)
+>
+> 要在setup中使用响应式数据, 就要使用reactive包裹一下
+
+```vue
+// reactive 的使用
+
+<template>
+  <div>{{car.brand}} -- {{car.color}}</div>
+  <button @click="()=>car.brand='宝马'">修改品牌</button>
+  <!-- <button @click="car.brand='宝马'">修改品牌</button> -->
+</template>
+
+<script>
+import { reactive } from 'vue'
+export default {
+  setup() {
+    // setup中药使用响应式数据, 需要使用reactive
+    const car = reactive({
+      brand: '奔驰',
+      color: 'blue'
+    })
+
+    // setup中返回数据暴露给组件使用
+    return {
+      car
+    }
+
+  },
+}
+</script>
+```
+
+## 3.4 ref
+
+```
+1 ref函数接受一个简单类型的值，返回一个响应式的ref对象。返回的对象有唯一的属性 value
+2 在setup函数中，通过ref对象的value属性可以访问到值
+3 在模板中，ref属性会自动解套，不需要额外的.value
+4 如果ref接受的是一个对象，会自动调用reactive
+```
+
+```vue
+// ref 的使用
+
+<template>
+  <!-- money.value 自动解套 -->
+  <div>{{money}}</div>
+  <button @click="money++">++</button>
+</template>
+
+<script>
+import { ref } from 'vue'
+export default {
+  setup() {
+    // 1. ref函数接受一个简单类型, 返回一个响应式的对象
+    // 2. 这个响应式对象只有一个属性 value
+    // 3. 在模板中使用ref，会自动解套，，，，会自动调用value
+    const money = ref(1000)
+    console.log(money)
+
+    // money++ // error  setup内没有解套,仍然需要使用money.value
+    money.value++
+
+    return {
+      money
+    }
+
+  },
+
+  mounted() {
+    console.log(this.money)
+    // money.value 自动解套
+    this.money++
+  }
+}
+</script>
+```
+
+## 3.5 toRefs
+
+```
+1 把一个响应式对象转换成普通对象，该普通对象的每个 property 都是一个 ref
+2 Reactive的响应式功能是赋予给对象的，但是如果给对象解构或者展开的时候，会让数据丢失响应式的能力。
+3 使用toRefs可以保证该对象展开的每一个 属性都是响应式的
+```
+
+```vue
+// toRefs 的使用
+
+<template>
+  <div>{{money}}</div>
+  <div>{{car.branch}} -- {{car.color}} -- {{car.price}}</div>
+  <button @click="money++">money++</button>
+  <button @click="car.price+=1000">price++</button>
+</template>
+
+<script>
+import { reactive, ref, toRefs } from 'vue'
+export default {
+  setup() {
+
+    // 数据集中到一个reactive管理
+    const state = reactive({
+      money: 100,
+      car: {
+        branch: '宝马',
+        color: 'blue',
+        price: 10000,
+      }
+    })
+
+    console.log({ ...state })
+
+    // 将响应式对象state转化成普通对象,同时将对象的每一个属性转成ref,生成新的响应式数据
+    console.log(toRefs(state))
+
+    return {
+      // ...state
+      // 直接使用扩展运算符会导致state中本来是简单类型的money丢失响应式,此时要使用到 toRefs
+
+      // 正确做法
+      ...toRefs(state)
+    }
+  }
+}
+</script>
+
+```
+
+## 3.6 readonly
+
+```
+1 传入一个对象（响应式或普通）或 ref，返回一个原始对象的只读代理。
+2 一个只读的代理是“深层的”，对象内部任何嵌套的属性也都是只读的。
+3 可以防止对象被修改
+4 readonly的实现: 实际就是Proxy的封装, 当set时, 不修改数据, 同时提示warn
+```
+
+```vue
+// readonly 的使用
+
+<template>
+  <div>{{money}}</div>
+  <div>{{car.branch}} -- {{car.price}}</div>
+  <button @click="money++">money++</button>
+  <button @click="car.price++">price++</button>
+</template>
+
+<script>
+import { readonly, ref } from 'vue'
+export default {
+  setup() {
+    const money = ref(100)
+
+    // readonly的实现: 实际就是Proxy的封装, 当set时, 不修改数据, 同时提示warn
+    const car = readonly({
+      branch: '宝马',
+      price: 10000
+    })
+
+    console.log('readonly car: ', car)
+
+    return {
+      // money 只读,不可修改
+      money: readonly(money),
+      car
+    }
+  }
+}
+</script>
+
+```
+
+## 3.7 computed
+
+```
+1 computed函数用于创建一个计算属性
+2 如果传入一个getter函数，会返回一个不允许修改的计算属性
+3 如果传入一个带有getter和setter函数的对象，会返回一个允许修改的计算属性
+```
+
+```vue
+// computed 计算属性 的使用
+
+<template>
+  <div>今年年龄: <input type="text" v-model="age"> </div>
+  <div>明年年龄: <input type="text" v-model="nextAge"> </div>
+  <div>后年年龄: <input type="text" v-model="nextNextAge"> </div>
+</template>
+
+<script>
+import { computed, ref } from 'vue'
+export default {
+  setup() {
+    const age = ref(18)
+
+    // 传入一个getter函数，会返回一个不允许修改的计算属性
+    const nextAge = computed(() => {
+      return parseInt(age.value) + 1
+    })
+
+    // 传入一个带有getter和setter函数的对象，会返回一个允许修改的计算属性
+    const nextNextAge = computed({
+      get(){
+        return parseInt(age.value)+2
+      },
+      set(value){
+        console.log(value)
+        // 修改后年的年龄
+        age.value = value-2
+      }
+    })
+
+    return {
+      age,
+      nextAge,
+      nextNextAge
+    }
+  }
+}
+</script>
+
+```
+
+## 3.8 watch
+
+```vue
+// watch 的使用
+
+<template>
+  <div>我的存款: {{money}}</div>
+  <div>车: {{car.branch}} -- {{car.price}}</div>
+  <div>count: {{count}}</div>
+  <button @click="money++">money++</button>
+  <button @click="car.price++">price++</button>
+  <button @click="count++">count++</button>
+</template>
+
+<script>
+import { reactive, ref, toRefs, watch } from 'vue'
+export default {
+  setup() {
+    const state = reactive({
+      money: 100,
+      car: {
+        branch: '宝马',
+        price: 10000
+      }
+    })
+
+    const count = ref(0)
+
+    // 接受3个参数
+    // 参数1：监视的数据源 可以是一个ref 或者是一个函数等...
+    // 参数2：回调函数 (value, oldValue) =>{}
+    // 参数3：额外的配置 是一个对象 { deep: true, immediate: true }
+
+    // 1 侦听单个数据源
+    // 1.1 侦听器一个拥有返回值的 getter 函数
+    watch(() => state.money, (money, prevMoney) => {
+      console.log(`money变化了, 新值${money}, 旧值${prevMoney}`)
+    })
+    // 1.2 直接侦听一个 ref
+    watch(count, (count, prevCount) => {
+      console.log(`count变化了, 新值${count}, 旧值${prevCount}`)
+    })
+    // 1.3 也可以直接侦听reactive
+    watch(state, (state, prevState) => {
+      console.log(state, prevState)
+    }, {
+      deep: true, // 深度监听
+      immediate: true // 初始化时,马上执行一次
+    })
+
+    // 2 侦听多个数据源
+    watch([() => state.money, () => state.car.price], ([money, prevMoney], [price, prevPrice]) => {
+      console.log('数据变化了', state)
+    })
+
+    return {
+      ...toRefs(state),
+      count,
+    }
+  },
+}
+</script>
+
+```
+
+
 
