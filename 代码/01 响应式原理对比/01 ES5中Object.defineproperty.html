@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      // const data = {
+      //   name: 'zs',
+      //   age: 18,
+      // }
+
+      const data = [1111, 2222]
+
+      for (const key in data) {
+        console.log(key, data[key])
+        let temp = data[key] // 缓存值
+
+        // 劫持
+        Object.defineProperty(data, key, {
+          get() {
+            console.log(`劫持了${key}的获取`)
+            return temp
+          },
+          set(value) {
+            console.log(`劫持了${key}的修改,值为${value}`)
+            temp = value
+          },
+        })
+
+        // Object.defineProperty的缺点
+        // 对象:无法劫持到对象属性的 添加(data.sex="male") 和 删除(delete data.name)
+        // 数组:无法劫持到数组 下标(data[2]=123213) 和 长度(data.length=2) 的变化
+      }
+
+      // for ... in 可遍历对象和数组
+      // for ... of 可遍历可迭代的数据
+      // for (const iterator of object) {
+      //   console.log(iterator)
+      // }
+    </script>
+  </body>
+</html>

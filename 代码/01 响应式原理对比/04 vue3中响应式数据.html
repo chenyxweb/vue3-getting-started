@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>vue的例子</h1>
+      <p>{{car.brand}} --- {{car.color}} ---{{car.price}}</p>
+      <p>{{arr}}</p>
+
+      <button @click="fn">按钮</button>
+    </div>
+    <!-- <script src="https://unpkg.com/vue@next"></script> -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/vue/3.0.0/vue.global.js"></script>
+    <script>
+      const App = {
+        data() {
+          return {
+            car: {
+              brand: '宝马',
+              color: 'green',
+            },
+            arr: ['张三', '李四'],
+          }
+        },
+        methods: {
+          fn() {
+            console.log('click')
+            this.car.brand = '奔驰'
+            // 会在DOM更新后才会执行回调函数
+            this.$nextTick(function () {
+              // vue为了性能考虑，不会改变完数据就立即更新DOM
+              console.log(document.querySelector('p').innerHTML)
+            })
+          },
+        },
+      }
+      const vm = Vue.createApp(App).mount('#app')
+
+      // 一下操作都可以劫持到
+      // vm.car.price = 10000 // 添加属性操作
+      // delete vm.car.brand // 删除属性操作
+      // arr[2] = '王五' // 数组下标操作
+    </script>
+  </body>
+</html>

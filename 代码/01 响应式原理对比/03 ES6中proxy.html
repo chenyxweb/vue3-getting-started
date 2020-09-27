@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const data = {
+        name: 'zs',
+        age: 18,
+      }
+
+      // const data = [1, 2, 3]
+
+      const proxyData = new Proxy(data, {
+        get(target, key, receiver) {
+          // target : data
+          // key : name 或 age
+          // receiver : proxyData
+          console.log(target, key, receiver)
+          console.log(`劫持到${key}的获取`)
+          return target[key]
+        },
+        set(target, key, value, receiver) {
+          console.log(target, key, value, receiver)
+          console.log(`劫持到${key}的设置,值为${value}`)
+          target[key] = value
+        },
+        deleteProperty(target, key) {
+          // 必须返回一个 Boolean 类型的值，表示了该属性是否被成功删除
+          return delete target[key]
+        },
+      })
+
+      // proxyData.sex = 'male' , delete proxyData.name  对象属性的添加和删除都能被劫持到
+      // 数组的下标和长度操作都能被劫持到
+    </script>
+  </body>
+</html>

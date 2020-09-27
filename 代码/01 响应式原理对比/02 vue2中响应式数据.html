@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">
+      <p>{{car.brand}} -- {{car.color}} -- {{car.price}}</p>
+      <p>{{arr}}</p>
+    </div>
+
+    <script src="https://unpkg.com/vue@2.6.12/dist/vue.js"></script>
+    <script>
+      const vm = new Vue({
+        el: '#app',
+        data: {
+          car: {
+            brand: '奔驰',
+            color: 'blue',
+          },
+          arr: ['张三', '李四'],
+        },
+      })
+
+      // vm.car.price = 10000 不会被劫持到 视图不会更新
+    </script>
+  </body>
+</html>
