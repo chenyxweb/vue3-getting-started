@@ -718,9 +718,39 @@ export default {
 
 ```
 
+## 3.9 watchEffect
 
+```
+立即执行传入的一个函数，并响应式追踪其依赖，并在其依赖变更时重新运行该函数。
+```
 
-## 3.9 钩子函数
+```js
+const count = ref(0)
+
+watchEffect(() => console.log(count.value))
+// -> 打印出 0
+
+setTimeout(() => {
+  count.value++
+  // -> 打印出 1
+}, 100)
+```
+
+### watch和watch的区别
+
+- watch  API 完全等效于 2.x `this.$watch` （以及 `watch` 中相应的选项）,`watch` 需要侦听特定的数据源，并在回调函数中执行副作用。默认情况是懒执行的，也就是说仅在侦听的源变更时才执行回调
+
+- 对比 `watchEffect`，`watch` 允许我们:
+
+```
+1 懒执行副作用
+2 更明确哪些状态的改变会触发侦听器重新运行副作用
+3 访问侦听状态变化前后的值
+```
+
+总结: watch更好用
+
+## 3.10 钩子函数
 
 ```
 vue3提供的生命周期钩子注册函数,只能在setup(){}期间使用
@@ -739,7 +769,7 @@ vue3提供的生命周期钩子注册函数,只能在setup(){}期间使用
 - `destroyed` -> `onUnmounted`
 - `errorCaptured` -> `onErrorCaptured`
 
-## 3.10 provide 和 inject
+## 3.11 provide 和 inject
 
 ```
 1 provide 和 inject 提供依赖注入, 可以实现组件通讯,跨多级组件通讯
