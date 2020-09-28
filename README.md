@@ -381,6 +381,7 @@ export default {
 2 从生命周期钩子的角度来看，setup会在beforeCreate钩子函数之前执行
 3 setup中不能使用this，this指向undefined
 4 组件内只有一个setup
+5 setup在整个生命周期只会执行一次
 ```
 
 ```vue
@@ -424,9 +425,12 @@ export default {
 
 ## 3.3 reactive
 
-> reactive函数接收一个普通对象, 返回该对象的响应式代理对象 (实际就是Proxy的封装)
->
-> 要在setup中使用响应式数据, 就要使用reactive包裹一下
+```
+1 reactive函数接收一个普通对象, 返回该对象的响应式代理对象 (实际就是Proxy的封装)
+2 要在setup中使用响应式数据, 就要使用reactive包裹一下
+```
+
+
 
 ```vue
 // reactive 的使用
@@ -715,4 +719,165 @@ export default {
 ```
 
 
+
+## 3.9 钩子函数
+
+```
+vue3提供的生命周期钩子注册函数,只能在setup(){}期间使用
+可以直接导入 onXXX 一族的函数来注册生命周期钩子
+```
+
+### 和vue2中对比
+
+- `beforeCreate` -> 使用 `setup()`
+- `created` -> 使用 `setup()`
+- `beforeMount` -> `onBeforeMount`
+- `mounted` -> `onMounted`
+- `beforeUpdate` -> `onBeforeUpdate`
+- `updated` -> `onUpdated`
+- `beforeDestroy` -> `onBeforeUnmount`
+- `destroyed` -> `onUnmounted`
+- `errorCaptured` -> `onErrorCaptured`
+
+## 3.10 provide 和 inject
+
+```
+1 provide 和 inject 提供依赖注入, 可以实现组件通讯,跨多级组件通讯
+2 父传子: 父组件provide数据,子组件inject数据
+3 子传父: 父组件privide方法,子组件inject方法,调用方法
+3 provide和inject过程中的key可以使用Symbol,string
+```
+
+- 父组件
+
+```vue
+// App.vue
+
+// provide 和 inject
+
+<template>
+  <div class="father">
+    <div>父组件: {{money}} <button @click="money++">money++</button> </div>
+    <demo-son></demo-son>
+  </div>
+</template>
+
+<script>
+import { ref, provide } from 'vue'
+import DemoSon from './DemoSon.vue'
+export const contextMoney = Symbol('money')
+export const handleContextMoney = Symbol('handleMoney')
+
+export default {
+  components: {
+    DemoSon
+  },
+
+  setup() {
+    const money = ref(100)
+
+    // 提供数据
+    provide(contextMoney, money)
+
+    // 提过修改数据的方法
+    provide(handleContextMoney, (value) => { money.value = value })
+
+    return {
+      money
+    }
+  },
+}
+</script>
+
+<style scoped>
+.father {
+  border: 1px solid #000;
+  padding: 15px;
+}
+</style>
+
+```
+
+- 子组件
+```vue
+// DemoSon.vue
+
+// 子组件 -- provide inject
+<template>
+  <div class="son">
+    <div>子组件: {{money}}</div>
+    <demo-grand-son></demo-grand-son>
+  </div>
+</template>
+
+<script>
+import { inject } from 'vue'
+import DemoGrandSon from './DemoGrandSon.vue'
+import { contextMoney } from './App.vue'
+export default {
+  components: {
+    DemoGrandSon
+  },
+
+  setup() {
+    // 使用父组件数据
+    const money = inject(contextMoney)
+
+    return {
+      money
+    }
+  }
+
+}
+</script>
+
+<style scoped>
+.son {
+  border: 1px solid #000;
+  padding: 15px;
+}
+</style>
+```
+
+- 孙组件
+```vue
+// DemoGrandSon.vue
+
+// 孙组件 -- provide inject
+<template>
+  <div class="grandson">
+    <div>孙组件: {{money}} <button @click="handleClick">money--</button> </div>
+  </div>
+</template>
+
+<script>
+import { inject } from 'vue'
+import { contextMoney, handleContextMoney } from './App.vue'
+
+export default {
+  setup() {
+    const money = inject(contextMoney) // 使用爷组件数据
+    const handleMoney = inject(handleContextMoney) // 使用爷组件方法
+
+    // 处理点击事件
+    const handleClick = () => {
+      handleMoney(money.value - 1)
+    }
+
+    return {
+      money,
+      handleClick
+    }
+  }
+
+}
+</script>
+
+<style scoped>
+.grandson {
+  border: 1px solid #000;
+  padding: 15px;
+}
+</style>
+```
 
