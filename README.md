@@ -382,6 +382,9 @@ export default {
 3 setup中不能使用this，this指向undefined
 4 组件内只有一个setup
 5 setup在整个生命周期只会执行一次
+6 setup(props,context){}接收两个参数 
+	props : props 对象是响应式的, watchEffect 或 watch 会观察和响应 props 的更新; 不要解构 props 对象，那样会使其失去响应性(vue里面setup只会执行一次,但是react中函数组件每次更新都会执行,所有react支持结构props); props 对象对用户空间代码是不可变的（用户代码尝试修改 props 时会触发警告）
+	context : 上下文对象, context.attrs 和 context.slots 都是内部组件实例上对应项的代理，可以确保在更新后仍然是最新值。所以可以解构，无需担心后面访问到过期的值
 ```
 
 ```vue
